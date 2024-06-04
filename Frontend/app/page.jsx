@@ -1,16 +1,26 @@
 "use client";
 import Papa from "papaparse";
-// import XLSX from 'xlsx';
 const XLSX = require("xlsx");
 
 import { useState } from "react";
 import { Alert } from "flowbite-react";
+
 import Container from "./components/Container";
 import Dropzone from "./components/Dropzone";
 import Tabela from "./components/Tabela";
+import Select from "./components/Select";
+
+const keys = ["Data", "Nome", "Valor", "Categoria"];
+const categoryOptions = [
+  "TRANSPORTE",
+  "SUPERMERCADO",
+  "RESTAURANTES",
+  "DROGARIA",
+  "COMPRAS",
+  "OUTROS",
+];
 
 export default function Home() {
-  const keys = ["Data", "Nome", "Valor", "Categoria"];
   const [despesas, setDespesas] = useState([]);
   const [alert, setAlert] = useState("");
 
@@ -46,6 +56,7 @@ export default function Home() {
   );
 }
 
+/***   FUNCTIONS   ***/
 function verifyTypeOfFile(file) {
   return file.name.split(".").at(-1);
 }
@@ -69,8 +80,9 @@ function parseCsvToJson(file, setDespesas) {
 
         data.push(row);
       });
-
       console.log(data);
+
+      data = data.map((e) => changeCategoryToSelect(e, categoryOptions));
       setDespesas(data);
     },
   });
@@ -92,8 +104,16 @@ function parseXlsxToJson(file, setDespesas) {
     // Converte a planilha em JSON
     xlsx = XLSX.utils.sheet_to_json(worksheet);
     console.log(xlsx);
+
+    xlsx = xlsx.map((e) => changeCategoryToSelect(e, categoryOptions));
     setDespesas(xlsx);
   };
 
   reader.readAsArrayBuffer(file);
+}
+
+function changeCategoryToSelect(despesa, options) {
+  let selecetedCategory = despesa.Categoria;
+  despesa.Categoria = <Select options={options} selected={selecetedCategory} />;
+  return despesa;
 }
