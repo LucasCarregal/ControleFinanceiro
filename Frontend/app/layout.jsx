@@ -1,4 +1,3 @@
-"use client";
 import { Inter } from "next/font/google";
 import { ThemeModeScript } from "flowbite-react";
 import "./globals.css";

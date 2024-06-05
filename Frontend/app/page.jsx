@@ -3,14 +3,15 @@ import Papa from "papaparse";
 const XLSX = require("xlsx");
 
 import { useState } from "react";
-import { Alert } from "flowbite-react";
+import { Alert, Button } from "flowbite-react";
+import { HiOutlineArrowLeft } from "react-icons/hi";
 
 import Container from "./components/Container";
 import Dropzone from "./components/Dropzone";
 import Tabela from "./components/Tabela";
 import Select from "./components/Select";
 
-const keys = ["Data", "Nome", "Valor", "Categoria"];
+const heads = ["Data", "Nome", "Valor", "Categoria"];
 const categoryOptions = [
   "TRANSPORTE",
   "SUPERMERCADO",
@@ -47,7 +48,12 @@ export default function Home() {
       <Container>
         {alert}
         {despesas.length > 0 ? (
-          <Tabela heads={Object.keys(despesas[0])} data={despesas} />
+          <>
+            <Button outline pill className="self-start" onClick={setDespesas}>
+              <HiOutlineArrowLeft className="h-6 w-6" />
+            </Button>
+            <Tabela heads={Object.keys(despesas[0])} data={despesas} />
+          </>
         ) : (
           <Dropzone handleChangeFile={readFile} />
         )}
@@ -80,7 +86,6 @@ function parseCsvToJson(file, setDespesas) {
 
         data.push(row);
       });
-      console.log(data);
 
       data = data.map((e) => changeCategoryToSelect(e, categoryOptions));
       setDespesas(data);
@@ -97,15 +102,17 @@ function parseXlsxToJson(file, setDespesas) {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, { type: "array" });
 
-    // Seleciona a primeira planilha
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
 
-    // Converte a planilha em JSON
     xlsx = XLSX.utils.sheet_to_json(worksheet);
-    console.log(xlsx);
 
-    xlsx = xlsx.map((e) => changeCategoryToSelect(e, categoryOptions));
+    xlsx = xlsx.map((row) => {
+      row = changeCategoryToSelect(row, categoryOptions);
+      row.Data = convertExcelDate(row.Data);
+      return row;
+    });
+
     setDespesas(xlsx);
   };
 
@@ -113,7 +120,19 @@ function parseXlsxToJson(file, setDespesas) {
 }
 
 function changeCategoryToSelect(despesa, options) {
-  let selecetedCategory = despesa.Categoria;
-  despesa.Categoria = <Select options={options} selected={selecetedCategory} />;
+  let selectedCategory = options.includes(despesa.Categoria)
+    ? despesa.Categoria
+    : "OUTROS";
+  despesa.Categoria = <Select options={options} selected={selectedCategory} />;
   return despesa;
+}
+
+function convertExcelDate(excelDate) {
+  const date = new Date((excelDate - 25569) * 86400 * 1000);
+  const utcDate = new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+  );
+  return utcDate.toLocaleDateString();
 }
